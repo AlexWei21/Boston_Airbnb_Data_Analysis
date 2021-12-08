@@ -1,0 +1,146 @@
+---
+title: "Text_Analysis"
+author: "Alex Wei"
+date: "12/3/2021"
+output: html_document
+---
+```{r, include=FALSE}
+# install.packages("wordcloud")
+# install.packages("RColorBrewer")
+# install.packages("wordcloud2")
+
+library(wordcloud)
+library(RColorBrewer)
+library(wordcloud2)
+library(dplyr)
+```
+
+
+```{r}
+listing <- read.csv('listings.csv')
+calendar <- read.csv('calendar.csv')
+# head(listing)
+# head(calendar)
+```
+
+Price info in the calendar file, match the price and description, stratify the price and create word cloud for different levels.
+
+```{r}
+calendar <- filter(calendar, price != '')
+
+calendar <- calendar %>% mutate (price = as.numeric(substring(price,2)))
+
+# head(calendar)
+
+```
+
+```{r}
+
+price_tab <- calendar %>%
+	group_by(listing_id) %>%
+	summarise(mean_price = round(mean(price),2))
+
+description_tab <- listing %>% select(listing_id = id,description)
+
+# head(price_tab)
+# head(description_tab)
+
+dat <- left_join(price_tab,description_tab, by = 'listing_id')
+```
+
+```{r}
+hist(dat$mean_price, main="Mean Price Distribution", xlab = "Price")
+```
+
+```{r}
+
+low_p <- dat %>% filter(mean_price < 100.0)
+
+med_p <- dat %>% filter(mean_price >= 100.0 & mean_price < 400.0)
+
+high_p <- dat %>% filter(mean_price >= 400.0)
+
+```
+
+
+```{r}
+# install.packages("tm")
+library(tm)
+```
+
+```{r}
+docs <- Corpus(VectorSource(low_p$description))
+
+docs <- docs %>%
+  tm_map(removeNumbers) %>%
+  tm_map(removePunctuation) %>%
+  tm_map(stripWhitespace)
+docs <- tm_map(docs, content_transformer(tolower))
+docs <- tm_map(docs, removeWords, stopwords("english"))
+
+dtm <- TermDocumentMatrix(docs) 
+matrix <- as.matrix(dtm) 
+words <- sort(rowSums(matrix),decreasing=TRUE) 
+df <- data.frame(word = names(words),freq=words)
+
+wordcloud(words = df$word, 
+          freq = df$freq, 
+          min.freq = 1,
+          max.words=200, 
+          random.order=FALSE, 
+          rot.per=0.35,
+          colors=brewer.pal(8, "Dark2"))
+```
+
+```{r}
+
+docs <- Corpus(VectorSource(med_p$description))
+
+docs <- docs %>%
+  tm_map(removeNumbers) %>%
+  tm_map(removePunctuation) %>%
+  tm_map(stripWhitespace)
+docs <- tm_map(docs, content_transformer(tolower))
+docs <- tm_map(docs, removeWords, stopwords("english"))
+
+dtm <- TermDocumentMatrix(docs) 
+matrix <- as.matrix(dtm) 
+words <- sort(rowSums(matrix),decreasing=TRUE) 
+df <- data.frame(word = names(words),freq=words)
+
+wordcloud(words = df$word, 
+          freq = df$freq, 
+          min.freq = 1,
+          max.words=200, 
+          random.order=FALSE, 
+          rot.per=0.35,
+          colors=brewer.pal(8, "Dark2"))
+```
+
+```{r}
+docs <- Corpus(VectorSource(high_p$description))
+
+docs <- docs %>%
+  tm_map(removeNumbers) %>%
+  tm_map(removePunctuation) %>%
+  tm_map(stripWhitespace)
+docs <- tm_map(docs, content_transformer(tolower))
+docs <- tm_map(docs, removeWords, stopwords("english"))
+
+dtm <- TermDocumentMatrix(docs) 
+matrix <- as.matrix(dtm) 
+words <- sort(rowSums(matrix),decreasing=TRUE) 
+df <- data.frame(word = names(words),freq=words)
+
+wordcloud(words = df$word, 
+          freq = df$freq, 
+          min.freq = 1,
+          max.words=200, 
+          random.order=FALSE, 
+          rot.per=0.35,
+          colors=brewer.pal(8, "Dark2"))
+```
+
+**Analysis**
+
+For text analysis, we decide to create three word clouds of description of the rental for three different price range to see if there is difference between the word frequency in difference price range. From the three word clouds we could see that there are some differences of word frequency among different price levels. For example, the word "luxury" only appears frequently in spaces with higher price.

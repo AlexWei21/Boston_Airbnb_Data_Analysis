@@ -1,0 +1,80 @@
+---
+title: "SVM_Boston_Airbnb"
+author: "Alex Wei"
+date: "12/4/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# install.packages("e1071")
+library(e1071)
+library(dplyr)
+library(stringr)
+library(caTools)
+library(MLmetrics)
+```
+
+```{r}
+dat <- read.csv('df.csv')
+head(dat)
+```
+
+```{r}
+set.seed(42)
+a <- dat[sample(1:nrow(dat)),]
+train <- a[1:2440,]
+test <- a[2440:3050,]
+```
+
+```{r}
+## Linear SVM
+
+svmfit = svm(price~ host_is_superhost + host_verifications + room_type + accommodates + bathrooms + bedrooms + beds + bed_type + number_of_reviews + review_scores_rating, data = train, kernel="linear")
+
+# summary(svmfit)
+
+y_pred <- predict(svmfit,test,decision.values = TRUE, probability = TRUE)
+y_true <- test$price
+
+RMSE(y_pred, y_true)
+```
+
+```{r}
+## Radial SVM
+
+svmfit = svm(price~ host_is_superhost + host_verifications + room_type + accommodates + bathrooms + bedrooms + beds + bed_type + number_of_reviews + review_scores_rating, data = train, kernel="radial")
+
+# summary(svmfit)
+
+y_pred <- predict(svmfit,test,decision.values = TRUE, probability = TRUE)
+y_true <- test$price
+
+RMSE(y_pred, y_true)
+
+```
+
+```{r}
+## Sigmoid SVM
+
+svmfit = svm(price~ host_is_superhost + host_verifications + room_type + accommodates + bathrooms + bedrooms + beds + bed_type + number_of_reviews + review_scores_rating, data = train, kernel="sigmoid", scale = FALSE)
+
+# summary(svmfit)
+
+y_pred <- predict(svmfit,test,decision.values = TRUE, probability = TRUE)
+y_true <- test$price
+
+RMSE(y_pred, y_true)
+
+```
+
+**Analysis**
+
+Support Vector Machine is a type of supervised learning used for classification, regression and outliers detection. The reason why we chose to  use support vector machines here is that SVM is Effective in high dimensional spaces, and here in the Boston Airbnb price prediction model, there are relatively large number of variate.
+
+The train set and test test are separate based on the ratio 8:2, which 80% of the data was randomly assigned as the train data set, and 20% of the data was randomly assigned as the test data set. 
+
+The variables we chose to use in the support vector machine are: host_is_superhost, host_verifications, room_type, accommodates, bathrooms, bedrooms, beds, bed_type, number_of_reviews, and review_scores_rating. Since these variables make more sense when predicting the price, and when adding more variables, the result of svm worse off. 
+
+Here, we utilized three kernels in the Support Vector Machines, which are Linear, Radial, and Sigmoid kernel. The error measurement we use to determine the effectiveness of the model is Root Mean Squared Error (RMSE), the best performed model based on RMSE is the Radial kernel Support Vector Machine Regression Model, which has the RMSE of 74.8. 
+
+The result of the support vector machine here in predicting boston airbnb price is overall unsatisfying. The main result of the unsatisfied result is might caused by the relative low dimension of the data. Though we have many variables in the data set, it's still much fewer than the observation number, which might leads to the malfunction of support vector machine regression model. 

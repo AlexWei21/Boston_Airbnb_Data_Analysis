@@ -1,0 +1,197 @@
+---
+title: "Final Project"
+author: "Cece Wang"
+date: "11/25/2021"
+output: html_document
+---
+
+First, we eliminate certain text variables by hand through excel for the purpose of regression and Machine Learning. We saved the subset of data as *"data.csv"*. Then, we performed data cleaning in the following step (as shown in the code): 
+
+1. We transformed all the empty strings to 0 after making sure that each missing value equals a value of 0. 
+
+2. We transformed all variables into numeric values
+
+3. We changed all the binary and multinomial varaibles into according numeric values
+
+4. We dropped all of the missing values that we determined to be unreasonable to simply change to the value of 0 
+
+```{r warning=FALSE}
+library(dplyr)
+library(stringr)
+library(tidyr)
+
+data <- read.csv("data.csv")
+data[data == ""] <- NA    
+data[is.na(data)] <- 0
+data <- data %>% 
+  mutate(price = as.numeric(str_replace_all(price, "\\$",""))) %>% 
+  mutate(security_deposit = as.numeric(str_replace_all(security_deposit, "\\$",""))) %>%
+  mutate(extra_people = as.numeric(str_replace_all(extra_people, "\\$",""))) %>%
+  mutate(cleaning_fee = as.numeric(str_replace_all(cleaning_fee, "\\$",""))) %>%
+  mutate(host_response_rate = as.numeric(str_replace_all(host_response_rate, "\\%",""))) %>%
+  mutate(host_acceptance_rate = as.numeric(str_replace_all(host_acceptance_rate, "\\%",""))) %>%
+  mutate(host_verifications = lengths(strsplit(data$host_verifications, "\\W+"))) %>%
+  mutate(bed_type = ifelse(bed_type == "Real Bed",1,0)) %>%
+  mutate(cancellation_policy = case_when(cancellation_policy == "moderate"~2,
+                                        cancellation_policy == "strict"~1,
+                                        cancellation_policy == "flexible"~3,
+                                        cancellation_policy == "super_strict_30"~0)) %>%
+  mutate(host_response_rate = as.numeric(str_replace_all(host_response_rate,"N/A",''))) %>%
+  mutate(host_acceptance_rate = as.numeric(str_replace_all(host_acceptance_rate,"N/A",''))) %>%
+  mutate(room_type = case_when(room_type == "Entire home/apt"~2,
+                               room_type == "Private room"~1,
+                               room_type == "Shared room"~0)) #%>%
+data[data == ''] <- NA
+data <- data %>% drop_na()
+```
+
+Then, we performed LASSO to do feature selection. The variables with positive coefficients are shown below.
+
+```{r}
+library(glmnet)
+require(Matrix)
+x <- model.matrix(price ~ ., data = data)
+y <- data$price
+# names(x)<- c("gender","age","emotional","tangible","affect",
+# "psi","psupport","esupport","supsources")
+set.seed(2)
+lambda_grid <- .5 ^ (-20:20)
+lasso.mod = glmnet(x, y, alpha = 1, family = "gaussian", lambda = lambda_grid)
+par(mfrow = c(1,2))
+plot(lasso.mod)
+cv.out <- cv.glmnet(x, y, alpha = 1)
+lambda.min <- cv.out$lambda.min
+plot(cv.out)
+
+lasso_coe <- predict(lasso.mod, s = lambda.min, type = "coefficients") 
+coe <- as.matrix(lasso_coe)[,1]
+
+coe[coe != 0]
+
+lasso_train <- data[names(coe[coe != 0])[-1]]
+lasso_train$y <- y
+```
+Here, we sort the features by their importance determined by LASSO in order to better choose which ones should be included in our regression models.
+
+```{r}
+library(vip)
+library(tidyverse)
+library(ggpubr)
+vip(lasso.mod, num_features=30, geom="point")
+```
+```{r}
+coef.min = coef(cv.out, s="lambda.min") 
+active.min = which(coef.min !=0) 
+dimnames(coef.min)[[1]][which(coef.min !=0)]
+```
+# Regression
+
+First, we put all variables with positive coefficients after the LASSO regularization into the regression model. 
+```{r}
+
+selected_variables <- dimnames(coef.min)[[1]][which(coef.min !=0)]
+selected_variables <- selected_variables[2:length(selected_variables)]
+sv <- paste0(selected_variables,collapse = " + ")
+linear1.mod <- lm(paste("price ~", sv), data = data)
+summary(linear1.mod)
+```
+However, it is obvious that this model includes too many variables impractically. Therefore, from these variables we select variables that are both statistically and realistically insignificant based on our own experience when it comes to apartment hunting.
+
+Recalling our own experience of finding AirBnbs, room type, accommodates, number of bathrooms and number of bedrooms are definitely important factors that affect our decisions. Therefore, we plot these four variables out to further investigate below. From the histograms, we can see the most common accommodation is for two people, and only a few houses can accommodate more than 6 people. What's more, most houses only have one bathroom and one or two bedrooms. There are three room types in our data: entire house/apt (labeled as 2), private room (1) and shared room (0). The first two account for the vast majority of the data. 
+
+```{r}
+data %>% 
+  mutate(numeric_room_type = as.numeric(room_type)) %>%
+  gather(predictor, value, c(numeric_room_type, accommodates, bathrooms, bedrooms)) %>% 
+  ggplot(aes(x = value)) + 
+  geom_bar(color = "black") + 
+  facet_wrap(~ predictor, scales = 'free_x') + 
+  scale_x_continuous( breaks  = c(0:10)) +
+  xlab(NULL) + ylab("Price")
+```
+
+We first build a linear regression model with only the four variables mentioned above. The model is $$ \hat{Price}_i = -58.306 + 82.776 RoomType_i + 9.066 Accommodates_i + 21.166Bathrooms +33.683Bedrooms $$. The result is in line with common sense; rent prices will increase with more accommodates, bedrooms, bathrooms, and better privacy (represented by room type). According to this model, we can simply judge whether the house has exceeded its common price based on these easy-collected variables when choosing rooms.
+
+```{r}
+linear2.mod <- lm(price ~ room_type + accommodates + bathrooms + bedrooms , data = data)
+summary(linear2.mod)
+lm2 <- summary(linear2.mod)
+
+#### MSE
+mean(lm2$residuals ^ 2)
+```
+```{r}
+library(car)
+avPlots(linear2.mod)
+```
+
+Then, we added the variable with feasibility of immediate booking because it is also a very intuitive and easy-to-obtain parameter in real life -- landlords don’t want their house to be empty! Thus, it may be helpful to better predict the value of the rent The new model is $$ \hat{Price}_i = -53.844 + 81.535 RoomType_i + 9.420 Accommodates_i + 20.890Bathrooms +33.706Bedrooms - 18.416InstantBookable$$. Comparing the two models we build, we can see that the adjusted $R^2$ of this new regression model with the instant_bookable term is greater than the first one (0.4721 > 0.468). The MSE is also smaller than before (6044 < 6093). Thus, we think it is appropriate to add the term of whether the house can be booked immediately into linear regression model. 
+
+```{r}
+linear3.mod <- lm(price ~ room_type + accommodates + bathrooms + bedrooms + instant_bookable, data = data)
+summary(linear3.mod)
+lm3 <- summary(linear3.mod)
+mean(lm3$residuals ^ 2)
+avPlots(linear3.mod)
+```
+
+# Machine Learning
+```{r warning=FALSE}
+library(randomForest)
+library(caret)
+library(tree)
+library(MASS)
+library(GGally)
+library(dslabs)
+library(pROC)
+```
+We build two Machine Learning models. In the Random Forest model, `room_type`, `bedrooms`, `accommodates`, `cleaning_fee`, `bathrooms` and `beds` are top 6 variables for rent price prediction ability.
+
+```{r, fig.width=12, fig.height=8}
+####data_rf <- data %>% dplyr::select(price, room_type , accommodates , bathrooms , bedrooms , require_guest_profile_picture , require_guest_phone_verification) %>% mutate(room_type = factor(room_type))
+
+data_rf <- data
+
+set.seed(1)
+price_index_train = createDataPartition(y = data_rf$price,               ### train:test = 1:1
+                                  times = 1, p = 0.5, list = FALSE)
+price_train_set = slice(data_rf, price_index_train)
+price_test_set = slice(data_rf, -price_index_train)
+
+set.seed(64)
+fit_rf = randomForest(price ~ ., data = price_train_set)
+fit_rf
+preds_fit_rf = predict(fit_rf, newdata = price_test_set)
+
+library(knitr)
+variable_importance <- importance(fit_rf) 
+tmp <- data_frame(feature = rownames(variable_importance),
+                  Gini = variable_importance[,1]) %>%
+                  arrange(desc(Gini))
+kable(tmp[1:6,])
+
+varImpPlot(fit_rf)
+```
+
+We can see that the Random Forest Model has a much smaller MSE than linear regression model. 
+```{r}
+plot(preds_fit_rf, price_test_set$price, xlab = "predicted price", ylab="real price")
+abline(0,1)
+mean((preds_fit_rf - price_test_set$price) ^2 )  ###MSE
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
