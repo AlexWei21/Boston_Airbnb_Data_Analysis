@@ -1,0 +1,44 @@
+---
+title: "Boston Airbnb Price Data Analysis"
+output: html_document
+---
+
+##### Jinglun Li, Alex Wei, Cece Wang, Yulin He, Tayler Li
+
+### Overview and Motivation
+
+This is actually the first time for any one of us in this group to live in Boston. Therefore, we all went through the same process of looking for an apartment to rent, and really understand how difficult it is to find a rather suitable one: before even considering the rent, we need to check for location, size, neighborhood, number of bedrooms/bathrooms, renovation date, etc. Thus, we want to study the rent data in Boston provided by AirBnb to see if we can build a model to accurately predict the price by looking at different variables about housing. We hope our project would provide better insight and help others to arrange satisfying accommodations.
+
+### Initial Questions
+
+The scientific goal of our project is to identify potential influential variables of housing costs, based on which we would set out to build a model that is able to predict rent given expected values of related factors. By doing univariate exploration then conducting regression analysis or applying machine learning methods, we would like to not only learn about the variables that have a statistically significant effect on rent levels but also determine the extent to which these variables affect the housing cost. The benefits brought about by our project are:
+
+1. Help potential tenants pick out the factors they could adjust on to make the rent meet their expectations;
+
+2. Offer potential tenants who are unsatisfied with a certain living condition suggestions on ways to modify other factors so as to optimize the most valued variable while maintaining rent at their expected level;
+
+3. Provide potential tenants with reference rent levels, given that they offer their expectations in predictor variables, so that they would be able to evaluate whether a certain listing is overcharging.
+
+### Data
+
+We found our data on [Kaggle](https://www.kaggle.com/airbnb/boston). It is Boston Airbnb Open Data between on 2016 Sept 7th. It has 3585 observations and 95 variables. All data are directly downloadable via this link, so if you wish to access the data, simply click into the website, click on "Download (76MB)" on the right side of the webpage and then unzip the downloaded zip file. Please note that, of the source data files, `calendar.csv` and `reviews.csv` are too big to upload to the Github repository, so if you wish to access these files, the only way is to download them through the link above. 
+
+We set price as our target variable and aimed at using the rest of the variables to build a model to predict the target variable.
+
+### Exploratory Analysis
+
+The exploratory analysis for our project is achieved through developing a Shiny App. In the Shiny App, users are first provided an overview of the distribution of Airbnb listing prices and then are allowed to explore the relationship between price and other variables in the dataset. For categorical candidate predictors, we employed boxplots to visualize the price distribution at each and every level of these variables; in contrast, we chose to use scatterplots to depict the relationship between price and continuous predictor variables. Specifically, to aid users' understanding, we applied smoothing methods to the scatterplots, where users are free to switch between smoothing methods; statistical methods including linear model, generalized additive model (GAM), and LOWESS are considered for smoothing. For details, please refer to the report on Shiny App or the code `app.R`.
+
+Through exploratory data analysis, we identified a series of variables that are mainly related to the property itself (e.g. number of bedrooms/bathrooms, room type) or listing policies (e.g. instant booking) as potential powerful predictors because they show strong associations with price. These variables are thus focused on during subsequent analyses. For details, please refer to other report files.
+
+### Final Analysis
+
+Please refer to report files of regression analysis & random forest analysis, support vector machines (SVM) analysis, map analysis, and text analysis.
+
+### Related Work
+
+"Predicting Airbnb prices with machine learning and location data: A case study using data from the City of Edinburgh, Scotland." [_towards data science_](https://towardsdatascience.com/predicting-airbnb-prices-with-machine-learning-and-location-data-5c1e033d0a5a).
+
+"Analysis of price determinants in the case of Airbnb listings." [_Taylor & Francis Online_](https://www.tandfonline.com/doi/full/10.1080/1331677X.2021.1962380).
+
+"Predicting Airbnb prices with machine learning and deep learning." [_towards data science_](https://towardsdatascience.com/predicting-airbnb-prices-with-machine-learning-and-deep-learning-f46d44afb8a6).
