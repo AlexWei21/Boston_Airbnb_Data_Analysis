@@ -1,0 +1,85 @@
+---
+title: "260 project"
+author: "Yulin He"
+date: "10/28/2021"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r}
+library(tidyverse)
+library(ggmap)
+```
+
+```{r}
+df<-read.csv("listings.csv")
+```
+
+
+## Get Boston map by ggmap package
+
+```{r,message = FALSE}
+mapbos <- get_map(c(left = -71.17179, bottom = 42.23594, right =-71.00010, top = 42.38998),maptype = "terrain", zoom = 14)
+
+```
+
+
+## Boston airbnb location distribution
+
+**By longitude and latitude number in our dataset, we draw points in boston map. From the map, we can see that airbnb are mainly located in Boston Downtown, Backbay, Fenway, South End, Jamaica Plain, Seaport, East Boston, Charlestown, and Allston. And then we want to explore the price distribution. We hope to get a sense of in which area, the price is high, and in which area, price is low.**
+
+```{r}
+bos<-ggmap(mapbos) +
+  geom_point(data = df,
+             aes(x = longitude, y = latitude, size = I(0.5)),
+             color = "blue", alpha = 0.7, size=0.08) 
+
+bos <- bos + labs(title = "Boston Airbnb Location Distribution")
+bos
+
+
+```
+
+
+## Price level heatmap 
+
+
+```{r}
+df$price = as.numeric(gsub("\\$", "", df$price))
+summary(df$price)
+
+dfnew<- df %>%
+  mutate(pricelevel = case_when(price <=85  ~ 1, 
+                                price>85 & price<=150 ~ 2,
+                                price>150 & price<=220 ~ 3,
+                                price>220 ~4))
+
+dfnew$pricelevel<-as.factor(dfnew$pricelevel)
+```
+
+
+```{r}
+qplot(dfnew$price,
+      geom="histogram",
+      binwidth=5,  
+      main="Histogram of Price", 
+      xlab="Price", 
+      fill=I("skyblue"))
+```
+
+**By statistical analysis, we get the scale that the first quatile is 85 dollars, the median is 150 dollars, and the third quatile is 220 dollars. The min is 10 dollars and the max is 999 dollars. There are 12 NA values that we just ignore since the number is small compare to the sample size. We divided all the airbnb into 4 group 10 - 85, 86 - 150, 151 - 220, and 221 - 999, and draw a heatmap. The darker color indicates the higher price. From the heatmap below, we can see that high price airbnb mainly located in Fenway, Backbay, Downtown, and South End, some are located in Seaport and Charlestown. Airbnbs in Jamaica Plain, East Boston, and Allston are cheaper.**
+
+
+```{r}
+bosprice<-ggmap(mapbos) +
+  geom_point(data = dfnew, 
+             aes(x = longitude, y = latitude, size = I(0.5), color=pricelevel),
+             alpha = 0.7, size=0.08)+
+  scale_color_manual(values=c("yellow","orange","red","firebrick4"))
+
+bosprice
+
+```
+
