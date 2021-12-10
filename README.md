@@ -1,7 +1,8 @@
 # Boston_Airbnb_Data_Analysis
 
 ## BST_260
-This is a course project for Harvard BST 260. 
+This is a course project for Harvard BST 260.
+
 The work will be a collbaration by Siyi Wang, Ziming Weo, Yulin He, Xinhao Li and Jinglun Li. 
 
 ## Data analysis and methods
