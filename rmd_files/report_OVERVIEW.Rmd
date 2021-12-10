@@ -21,7 +21,7 @@ The scientific goal of our project is to identify potential influential variable
 
 ### Data
 
-We found our data on [Kaggle](https://www.kaggle.com/airbnb/boston). It is Boston Airbnb Open Data between on 2016 Sept 7th. It has 3585 observations and 95 variables. All data are directly downloadable via this link, so if you wish to access the data, simply click into the website, click on "Download (76MB)" on the right side of the webpage and then unzip the downloaded zip file. Please note that, of the source data files, `calendar.csv` and `reviews.csv` are too big to upload to the Github repository, so if you wish to access these files, the only way is to download them through the link above. 
+We found our data on [Kaggle](https://www.kaggle.com/airbnb/boston). It is Boston Airbnb Open Data between Sep 2016 and Sep 2017. It has 3585 observations and 95 variables. All data are directly downloadable via this link, so if you wish to access the data, simply click into the website, click on "Download (76MB)" on the right side of the webpage and then unzip the downloaded zip file. Please note that, of the source data files, `calendar.csv` and `reviews.csv` are too big to upload to the Github repository, so if you wish to access these files, the only way is to download them through the link above. 
 
 We set price as our target variable and aimed at using the rest of the variables to build a model to predict the target variable. Different analyses in our project employed different data cleaning strategies; please refer to each individual analysis report for more details.
 
