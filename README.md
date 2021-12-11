@@ -20,4 +20,4 @@ Our project can be found on this [website](https://sites.google.com/view/bst260p
 The original data source comes form [Kaggle](https://www.kaggle.com/airbnb/boston?select=listings.csv).  
 
 ## Video Presentation
-Video Presentation can be found in Github under the folder "Video" and this [link](https://www.youtube.com/watch?v=gL0o3-_1JUI)
+Video Presentation can be found in Github under the folder "Video" and this [link](https://www.youtube.com/watch?v=gL0o3-_1JUI).
